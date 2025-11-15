@@ -18,29 +18,23 @@ jobs:
         python-version: '3.9'
         
     - name: Install dependencies
-      run: |
-        pip install requests pytest allure-pytest
+      run: pip install requests pytest allure-pytest
 
     - name: Create test file
       run: |
         mkdir -p tests
-        cat > tests/test_api.py << 'EOF'
-import requests
-import allure
-
-@allure.title("PetStore API Test")
-def test_petstore_api():
-    response = requests.get("https://petstore.swagger.io/v2/pet/findByStatus?status=available")
-    assert response.status_code == 200
-    print("✅ API is working!")
-EOF
+        echo 'import requests' > tests/test_api.py
+        echo 'import allure' >> tests/test_api.py
+        echo '' >> tests/test_api.py
+        echo '@allure.title("PetStore API Test")' >> tests/test_api.py
+        echo 'def test_petstore_api():' >> tests/test_api.py
+        echo '    response = requests.get("https://petstore.swagger.io/v2/pet/findByStatus?status=available")' >> tests/test_api.py
+        echo '    assert response.status_code == 200' >> tests/test_api.py
 
     - name: Run tests with Allure
-      run: |
-        pytest tests/ --alluredir=allure-results -v
+      run: pytest tests/ --alluredir=allure-results -v
 
     - name: Deploy Allure Report
       uses: simple-elf/allure-report-action@v1.7
       with:
         allure_results: allure-results
-        allure_history: allure-history
