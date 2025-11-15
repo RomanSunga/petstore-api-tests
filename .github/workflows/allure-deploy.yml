@@ -1,0 +1,56 @@
+name: Deploy Allure Report
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        pip install requests pytest allure-pytest
+
+    - name: Create tests
+      run: |
+        mkdir -p tests
+        echo 'import requests, allure' > tests/test_api.py
+        echo 'def test_petstore():' >> tests/test_api.py
+        echo '    r = requests.get("https://petstore.swagger.io/v2/pet/findByStatus?status=available")' >> tests/test_api.py
+        echo '    assert r.status_code == 200' >> tests/test_api.py
+
+    - name: Run tests and generate Allure
+      run: |
+        pytest tests/ --alluredir=allure-results
+        allure generate allure-results --clean -o _site
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: '_site'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
