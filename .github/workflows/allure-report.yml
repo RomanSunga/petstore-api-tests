@@ -52,13 +52,10 @@ EOF
 
       - name: Generate Allure Report
         run: |
-          # Установка Allure
           wget https://repo1.maven.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.zip
           unzip allure-commandline-2.27.0.zip -d allure
           export PATH=$PATH:$(pwd)/allure/allure-2.27.0/bin
-          # Генерация отчёта
           allure generate allure-results -o allure-report --clean
-          # Добавляем .nojekyll в папку отчёта
           touch allure-report/.nojekyll
 
       - name: Deploy to GitHub Pages
