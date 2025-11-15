@@ -1,0 +1,76 @@
+name: 🎯 Allure Report
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: 📦 Install dependencies
+      run: |
+        pip install requests pytest allure-pytest
+        
+    - name: 🧪 Create test file
+      run: |
+        mkdir -p tests
+        cat > tests/test_petstore.py << 'EOF'
+        import requests
+        import allure
+        import pytest
+        
+        BASE_URL = "https://petstore.swagger.io/v2"
+        
+        class TestPetStore:
+            @allure.title("Check PetStore API is working")
+            @allure.severity(allure.severity_level.BLOCKER)
+            def test_api_availability(self):
+                with allure.step("Send GET request to API"):
+                    response = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
+                
+                with allure.step("Check response status"):
+                    assert response.status_code == 200
+                    allure.attach(f"Status Code: {response.status_code}", name="Response Info", attachment_type=allure.attachment_type.TEXT)
+            
+            @allure.title("Add new pet to store")
+            @allure.severity(allure.severity_level.CRITICAL)  
+            def test_add_pet(self):
+                pet_data = {
+                    "id": 999,
+                    "name": "AllureTestDog",
+                    "status": "available"
+                }
+                
+                with allure.step("Prepare pet data"):
+                    allure.attach(str(pet_data), name="Pet Data", attachment_type=allure.attachment_type.JSON)
+                
+                with allure.step("Send POST request to add pet"):
+                    response = requests.post(f"{BASE_URL}/pet", json=pet_data)
+                
+                with allure.step("Verify pet was added"):
+                    assert response.status_code == 200
+                    assert response.json()["name"] == "AllureTestDog"
+                    allure.attach(str(response.json()), name="Response Data", attachment_type=allure.attachment_type.JSON)
+        EOF
+        
+    - name: 🧪 Run tests with Allure
+      run: |
+        pytest tests/ --alluredir=allure-results -v
+        
+    - name: 📊 Publish Allure Report
+      uses: simple-elf/allure-report-action@master
+      with:
+        allure_results: allure-results
+        allure_report: allure-report
+        keep_reports: 10
