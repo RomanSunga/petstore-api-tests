@@ -1,24 +1,16 @@
-name: 🚀 Deploy Allure Report
+name: 🎯 Simple Allure Report
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  pages: write
-  id-token: write
-  contents: write
-
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - name: 📥 Checkout
+    - name: 📥 Checkout code
       uses: actions/checkout@v4
       
     - name: 🐍 Setup Python
@@ -30,47 +22,41 @@ jobs:
       run: |
         pip install requests pytest allure-pytest
         
-    - name: 🧪 Create and run tests
+    - name: 🧪 Create simple test
       run: |
         mkdir -p tests
-        cat > tests/test_api.py << 'EOF'
+        cat > tests/test_simple.py << 'EOF'
         import requests
         import allure
-        import pytest
         
         BASE_URL = "https://petstore.swagger.io/v2"
         
         class TestPetStore:
-            @allure.title("Check API Availability")
-            def test_api_available(self):
+            @allure.title("API is working")
+            def test_api_works(self):
                 response = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
                 assert response.status_code == 200
+                print("✅ API is working!")
                 
-            @allure.title("Add New Pet")
+            @allure.title("Can add pet")
             def test_add_pet(self):
                 pet_data = {
-                    "id": 12345,
-                    "name": "TestBuddy", 
+                    "id": 999,
+                    "name": "TestDog",
                     "status": "available"
                 }
                 response = requests.post(f"{BASE_URL}/pet", json=pet_data)
                 assert response.status_code == 200
+                print("✅ Pet added successfully!")
         EOF
         
+    - name: 🧪 Run tests with Allure
+      run: |
         pytest tests/ --alluredir=allure-results -v
         
-    - name: 📊 Generate Allure report
-      run: |
-        allure generate allure-results --clean -o _site
-        
-    - name: 🚀 Setup Pages
-      uses: actions/configure-pages@v3
-      
-    - name: 📁 Upload artifact
-      uses: actions/upload-pages-artifact@v2
+    - name: 📊 Publish Allure Report
+      uses: simple-elf/allure-report-action@master
       with:
-        path: '_site'
-        
-    - name: 🎯 Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v2
+        allure_results: allure-results
+        allure_report: allure-report
+        keep_reports: 5
