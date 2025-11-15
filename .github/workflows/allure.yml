@@ -38,11 +38,13 @@ EOF
 
       - name: Generate Allure Report
         run: |
-          # Установка Allure CLI (через SDKMAN или напрямую)
           wget https://repo1.maven.org/maven2/io/qameta/allure/allure-commandline/2.26.0/allure-commandline-2.26.0.zip
           unzip allure-commandline-2.26.0.zip -d allure
           export PATH=$PATH:$(pwd)/allure/allure-2.26.0/bin
           allure generate allure-results -o allure-report --clean
+
+      - name: Add .nojekyll file
+        run: touch allure-report/.nojekyll
 
       - name: Deploy to GitHub Pages
         run: |
@@ -51,6 +53,7 @@ EOF
           git checkout -b gh-pages || git checkout gh-pages
           rm -rf ./*
           cp -r allure-report/* .
+          touch .nojekyll
           git add .
           git commit -m "Update Allure report" || echo "No changes to commit"
           git push origin gh-pages
