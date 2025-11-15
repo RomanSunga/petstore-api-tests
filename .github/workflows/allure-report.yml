@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests pytest allure-pytest
 
-      - name: Create test file (if not exists)
+      - name: Create test file
         run: |
           mkdir -p tests
           cat > tests/test_api.py << 'EOF'
@@ -42,13 +42,6 @@ EOF
 
       - name: Run tests with Allure
         run: pytest tests/ --alluredir=allure-results -v
-
-      - name: Upload Allure results as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: allure-results/
-          retention-days: 7
 
       - name: Generate Allure Report
         run: |
