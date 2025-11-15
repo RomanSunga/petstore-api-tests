@@ -1,16 +1,24 @@
-name: 🚀 Deploy Allure Report
+name: 🚀 Deploy Allure Report to Pages
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  pages: write
+  id-token: write
+  contents: write
+
 jobs:
-  test-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - name: 📥 Checkout code
+    - name: 📥 Checkout
       uses: actions/checkout@v3
       
     - name: 🐍 Setup Python
@@ -22,36 +30,42 @@ jobs:
       run: |
         pip install requests pytest allure-pytest
         
-    - name: 🧪 Run API tests
+    - name: 🧪 Run tests
       run: |
         mkdir -p tests
-        cat > tests/test_petstore.py << 'EOF'
+        cat > tests/test_simple.py << 'EOF'
         import requests
         import allure
         
         BASE_URL = "https://petstore.swagger.io/v2"
         
         class TestPetStore:
-            @allure.title("Check PetStore API")
-            def test_api_works(self):
+            @allure.title("API Check")
+            def test_api(self):
                 r = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
                 assert r.status_code == 200
                 
-            @allure.title("Add test pet")
+            @allure.title("Add Pet")
             def test_add_pet(self):
-                pet_data = {
-                    "id": 999, "name": "TestDog",
-                    "status": "available"
-                }
+                pet_data = {"id": 999, "name": "TestDog", "status": "available"}
                 r = requests.post(f"{BASE_URL}/pet", json=pet_data)
                 assert r.status_code == 200
         EOF
         
         pytest tests/ --alluredir=allure-results -v
         
-    - name: 📊 Deploy Allure Report
-      uses: simple-elf/allure-report-action@master
+    - name: 📊 Generate Allure report
+      run: |
+        allure generate allure-results --clean -o _site
+        
+    - name: 🚀 Setup Pages
+      uses: actions/configure-pages@v3
+      
+    - name: 📁 Upload to Pages
+      uses: actions/upload-pages-artifact@v2
       with:
-        allure_results: allure-results
-        allure_report: allure-report
-        keep_reports: 10
+        path: '_site'
+        
+    - name: 🎯 Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
