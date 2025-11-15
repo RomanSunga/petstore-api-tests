@@ -1,4 +1,4 @@
-name: 🚀 Deploy Allure Report to Pages
+name: 🚀 Deploy Allure Report
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     
     steps:
     - name: 📥 Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: 🐍 Setup Python
       uses: actions/setup-python@v4
@@ -30,26 +30,31 @@ jobs:
       run: |
         pip install requests pytest allure-pytest
         
-    - name: 🧪 Run tests
+    - name: 🧪 Create and run tests
       run: |
         mkdir -p tests
-        cat > tests/test_simple.py << 'EOF'
+        cat > tests/test_api.py << 'EOF'
         import requests
         import allure
+        import pytest
         
         BASE_URL = "https://petstore.swagger.io/v2"
         
         class TestPetStore:
-            @allure.title("API Check")
-            def test_api(self):
-                r = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
-                assert r.status_code == 200
+            @allure.title("Check API Availability")
+            def test_api_available(self):
+                response = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
+                assert response.status_code == 200
                 
-            @allure.title("Add Pet")
+            @allure.title("Add New Pet")
             def test_add_pet(self):
-                pet_data = {"id": 999, "name": "TestDog", "status": "available"}
-                r = requests.post(f"{BASE_URL}/pet", json=pet_data)
-                assert r.status_code == 200
+                pet_data = {
+                    "id": 12345,
+                    "name": "TestBuddy", 
+                    "status": "available"
+                }
+                response = requests.post(f"{BASE_URL}/pet", json=pet_data)
+                assert response.status_code == 200
         EOF
         
         pytest tests/ --alluredir=allure-results -v
@@ -61,7 +66,7 @@ jobs:
     - name: 🚀 Setup Pages
       uses: actions/configure-pages@v3
       
-    - name: 📁 Upload to Pages
+    - name: 📁 Upload artifact
       uses: actions/upload-pages-artifact@v2
       with:
         path: '_site'
