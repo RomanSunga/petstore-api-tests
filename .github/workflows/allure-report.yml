@@ -1,0 +1,36 @@
+name: 🎯 Allure Report
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: 📦 Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install allure-pytest requests pytest
+        
+    - name: 🧪 Run tests with Allure
+      run: |
+        pytest tests/ --alluredir=allure-results
+        
+    - name: 📊 Publish Allure Report
+      uses: simple-elf/allure-report-action@master
+      with:
+        allure_results: allure-results
+        allure_report: allure-report
+        keep_reports: 20
