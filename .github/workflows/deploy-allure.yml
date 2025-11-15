@@ -1,0 +1,57 @@
+name: 🚀 Deploy Allure Report
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: 📦 Install dependencies
+      run: |
+        pip install requests pytest allure-pytest
+        
+    - name: 🧪 Run API tests
+      run: |
+        mkdir -p tests
+        cat > tests/test_petstore.py << 'EOF'
+        import requests
+        import allure
+        
+        BASE_URL = "https://petstore.swagger.io/v2"
+        
+        class TestPetStore:
+            @allure.title("Check PetStore API")
+            def test_api_works(self):
+                r = requests.get(f"{BASE_URL}/pet/findByStatus?status=available")
+                assert r.status_code == 200
+                
+            @allure.title("Add test pet")
+            def test_add_pet(self):
+                pet_data = {
+                    "id": 999, "name": "TestDog",
+                    "status": "available"
+                }
+                r = requests.post(f"{BASE_URL}/pet", json=pet_data)
+                assert r.status_code == 200
+        EOF
+        
+        pytest tests/ --alluredir=allure-results -v
+        
+    - name: 📊 Deploy Allure Report
+      uses: simple-elf/allure-report-action@master
+      with:
+        allure_results: allure-results
+        allure_report: allure-report
+        keep_reports: 10
